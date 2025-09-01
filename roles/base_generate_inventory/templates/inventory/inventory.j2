@@ -1,0 +1,11 @@
+[local]
+localhost ansible_connection=local
+
+[k3_nodes]
+{% for host in proxmox_hosts %}
+{{ host.hostname }} ansible_host={{ host.ip }}
+{% endfor %}
+
+[k3_nodes:vars]
+ansible_user=psubedi
+ansible_connection=ssh
