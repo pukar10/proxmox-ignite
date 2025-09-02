@@ -1,9 +1,9 @@
 ---
 pve_basics_packages:
   - ca-certificates
-  - libguestfs-tools
+  # - libguestfs-tools
   - wget
-  - qemu-utils
+  # - qemu-utils
   - vim
   - curl
   - jq

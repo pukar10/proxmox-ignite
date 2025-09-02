@@ -4,7 +4,7 @@
   gather_facts: false
   become: true
   roles:
-    - hosts-config_repos
-    - hosts-set_hostnames
-    - hosts-install_packages
+    # - hosts-config_repos
+    # - hosts-set_hostnames
+    # - hosts-install_packages
     - hosts-enable-snippets

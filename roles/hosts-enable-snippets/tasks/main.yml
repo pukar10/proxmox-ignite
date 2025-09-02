@@ -1,28 +1,42 @@
 ---
-- name: Read storage config
-  ansible.builtin.command: "pvesm config {{ proxmox_storage_id }}"
-  register: _cfg
+- name: Ensure proxmox_storage_id is provided
+  assert:
+    that:
+      - proxmox_storage_id is defined
+      - proxmox_storage_id | length > 0
+    fail_msg: "Set 'proxmox_storage_id' "
+
+- name: Read storage config (JSON)
+  ansible.builtin.command:
+    cmd: "pvesh get /storage/{{ proxmox_storage_id }} --output-format json"
+  register: s_cfg_cmd
   changed_when: false
 
-- name: Enable 'snippets' on storage if missing
-  ansible.builtin.command: >-
-    pvesm set {{ proxmox_storage_id }}
-    --content {{
-      (
-        (
-          (_cfg.stdout | regex_search('content\\s+(.*)', '\\1'))
-          | default('images,iso,vztmpl,backup', true)
-          | regex_replace('\\s','')
-          | split(',')
-        ) + ['snippets']
-      ) | unique | join(',')
-    }}
-  when: "'snippets' not in _cfg.stdout"
+- name: Parse storage config
+  ansible.builtin.set_fact:
+    s_cfg: "{{ s_cfg_cmd.stdout | from_json }}"
 
-- name: Ensure snippets directory exists
+# s_cfg.content might be undefined on some storages; give it a sensible default
+- name: Compute updated content string that includes 'snippets'
+  ansible.builtin.set_fact:
+    new_content: >-
+      {{ (
+           (s_cfg.content | default('images,iso,vztmpl,backup'))
+           | regex_replace('\s','')
+           | split(',')
+         ) | union(['snippets']) | join(',') }}
+
+- name: Enable 'snippets' on the storage (if missing)
+  ansible.builtin.command:
+    cmd: "pvesm set {{ proxmox_storage_id }} --content {{ new_content }}"
+  when: "'snippets' not in (s_cfg.content | default(''))"
+
+# Only storages with a local/mounted path expose 'path' (e.g., dir, nfs, cifs).
+- name: Ensure snippets directory exists (if storage has a path)
   ansible.builtin.file:
-    path: "{{ ((_cfg.stdout | regex_search('path\\s+(.*)', '\\1')) | default('/var/lib/vz', true)) }}/snippets"
+    path: "{{ s_cfg.path }}/snippets"
     state: directory
     owner: root
     group: root
     mode: '0755'
+  when: s_cfg.path is defined and s_cfg.path | length > 0
