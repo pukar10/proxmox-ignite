@@ -1,0 +1,39 @@
+---
+- name: Find enterprise APT source files (no-fail if none)
+  ansible.builtin.shell: >
+    grep -RIl "enterprise\.proxmox\.com"
+    /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null || true
+  register: enterprise_files
+  changed_when: false
+
+- name: Remove enterprise APT source files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ enterprise_files.stdout_lines }}"
+
+- name: Ensure Proxmox archive keyring is installed
+  ansible.builtin.package:
+    name: proxmox-archive-keyring
+    state: present
+
+- name: Configure Proxmox deb822 no-subscription sources (trixie)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/proxmox.sources
+    mode: '0644'
+    content: |
+      Types: deb
+      URIs: http://download.proxmox.com/debian/pve
+      Suites: trixie
+      Components: pve-no-subscription
+      Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+
+      Types: deb
+      URIs: http://download.proxmox.com/debian/ceph-squid
+      Suites: trixie
+      Components: no-subscription
+      Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes

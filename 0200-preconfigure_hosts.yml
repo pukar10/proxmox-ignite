@@ -4,7 +4,7 @@
   gather_facts: false
   become: true
   roles:
-    - hosts-disable_enterprise_repos
+    - hosts-config_repos
     - hosts-enable_no_subs_repo
     - hosts-set_hostnames
     - hosts-install_chrony
