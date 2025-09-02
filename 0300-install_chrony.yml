@@ -1,0 +1,7 @@
+---
+- name: Install chrony
+  hosts: proxmox_hosts
+  gather_facts: false
+  become: true
+  roles:
+    - hosts-install_chrony

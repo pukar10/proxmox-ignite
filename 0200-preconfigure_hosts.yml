@@ -5,8 +5,6 @@
   become: true
   roles:
     - hosts-config_repos
-    - hosts-enable_no_subs_repo
     - hosts-set_hostnames
-    - hosts-install_chrony
     - hosts-install_packages
     - hosts-enable-snippets
