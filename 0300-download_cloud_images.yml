@@ -1,0 +1,7 @@
+---
+- name: Preconfigure hosts
+  hosts: proxmox_hosts
+  gather_facts: false
+  become: true
+  roles:
+    - hosts-download_configure_ci_images

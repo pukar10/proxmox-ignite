@@ -11,5 +11,5 @@ proxmox_hosts:
     hostname: proxmox3
     ip: 192.168.1.32
 
-ci_username: psubedi
-ci_password: Subedi10!
+ci_username: 
+ci_password: 

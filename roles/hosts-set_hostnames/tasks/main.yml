@@ -1,0 +1,21 @@
+# Set hostnames: hostnamectl set-hostname proxmox1
+---
+- name: Find matching node
+  ansible.builtin.set_fact:
+    curr_node: "{{ proxmox_hosts | selectattr('name', 'equalto', inventory_hostname) | first }}"
+
+- name: Fail if no matching node is found
+  ansible.builtin.fail:
+    msg: "No match for {{ inventory_hostname }} in proxmox_hosts"
+  when: curr_node is not defined
+
+- name: Set hostname to proxmox_hosts.hostname
+  become: true
+  ansible.builtin.hostname:
+    name: "{{ curr_node.hostname }}"
+    use: systemd
+  register: hostname_result
+
+- name: Confirm hostname
+  ansible.builtin.debug:
+    msg: "Hostname set to: {{ hostname_result.name }} on node: {{ inventory_hostname }}"

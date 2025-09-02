@@ -1,0 +1,16 @@
+---
+ubuntu_cloud_image_url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+ci_image_name: "ubuntu-noble-server-ci"
+
+# Checks if installed, needed to customize images
+cloud_image_tools:
+- libguestfs-tools
+- qemu-utils
+- wget
+- ca-certificates
+
+image_username: psubedi
+image_password: "ChangeMeSoon1!"
+
+# Storage to derive template/qemu path (read again on each host)
+proxmox_storage_id: "local"

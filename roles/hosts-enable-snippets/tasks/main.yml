@@ -1,0 +1,28 @@
+---
+- name: Read storage config
+  ansible.builtin.command: "pvesm config {{ proxmox_storage_id }}"
+  register: _cfg
+  changed_when: false
+
+- name: Enable 'snippets' on storage if missing
+  ansible.builtin.command: >-
+    pvesm set {{ proxmox_storage_id }}
+    --content {{
+      (
+        (
+          (_cfg.stdout | regex_search('content\\s+(.*)', '\\1'))
+          | default('images,iso,vztmpl,backup', true)
+          | regex_replace('\\s','')
+          | split(',')
+        ) + ['snippets']
+      ) | unique | join(',')
+    }}
+  when: "'snippets' not in _cfg.stdout"
+
+- name: Ensure snippets directory exists
+  ansible.builtin.file:
+    path: "{{ ((_cfg.stdout | regex_search('path\\s+(.*)', '\\1')) | default('/var/lib/vz', true)) }}/snippets"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'

@@ -1,1 +1,12 @@
-- hosts: 
+---
+- name: Preconfigure hosts
+  hosts: proxmox_hosts
+  gather_facts: false
+  become: true
+  roles:
+    - hosts-disable_enterprise_repos
+    - hosts-enable_no_subs_repo
+    - hosts-set_hostnames
+    - hosts-install_chrony
+    - hosts-install_packages
+    - hosts-enable-snippets

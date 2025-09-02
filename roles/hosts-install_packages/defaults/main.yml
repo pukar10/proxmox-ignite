@@ -1,0 +1,15 @@
+---
+pve_basics_packages:
+  - ca-certificates
+  - libguestfs-tools
+  - wget
+  - qemu-utils
+  - vim
+  - curl
+  - jq
+  - yq
+  - git
+  - net-tools
+  - unzip
+  - zip
+  - rsync

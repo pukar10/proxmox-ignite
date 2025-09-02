@@ -1,0 +1,23 @@
+---
+- name: Check if enterprise repo file exists
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+  register: pve_ent
+
+- name: Comment out enterprise repo
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    regexp: '^(deb\s+.*)$'
+    replace: '# \1'
+  when: pve_ent.stat.exists
+
+- name: Disable Ceph enterprise repo if present
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list.d/ceph.list
+    regexp: '^(deb\s+.*)$'
+    replace: '# \1'
+  ignore_errors: true
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes

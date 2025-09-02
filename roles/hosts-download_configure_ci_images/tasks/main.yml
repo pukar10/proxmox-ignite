@@ -1,0 +1,51 @@
+---
+- name: Ensure required packages are present
+  apt:
+    name: "{{ cloud_image_tools }}"
+    state: present
+    update_cache: true
+
+- name: Resolve storage path and template dir
+  set_fact:
+    storage_path: "/var/lib/vz"
+    template_qemu_dir: "/var/lib/vz/template/qemu"
+
+- name: Ensure template/qemu directory exists
+  file:
+    path: "{{ template_qemu_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Compute filenames
+  set_fact:
+    base_img: "{{ template_qemu_dir }}/{{ ci_image_name: }}.img"
+    custom_img: "{{ template_qemu_dir }}/{{ ci_image_name: }}-customized.qcow2"
+
+- name: Download latest Ubuntu cloud image
+  get_url:
+    url: "{{ ubuntu_cloud_image_url }}"
+    dest: "{{ base_img }}"
+    mode: '0644'
+    force: true
+
+- name: Customize image with libguestfs (idempotent by target file)
+  command: >-
+    virt-customize -a {{ base_img }}
+    --install qemu-guest-agent
+    --run-command 'useradd -m -s /bin/bash {{ ci_username }} || true'
+    --run-command "bash -lc 'usermod -aG sudo {{ ci_username }}'"
+    --run-command "bash -lc 'echo {{ ci_username }}:{{ ci_password }} | chpasswd'"
+    --write /etc/ssh/sshd_config.d/99-password-fallback.conf:"PasswordAuthentication yes\nKbdInteractiveAuthentication yes\nPubkeyAuthentication yes\nUsePAM yes\n"
+    --firstboot-command 'systemctl enable --now qemu-guest-agent || true'
+    --selinux-relabel
+  args:
+    creates: "{{ custom_img }}"
+  register: customize
+  changed_when: customize is succeeded
+
+- name: Convert to qcow2 (copy-on-write friendly)
+  command: "qemu-img convert -O qcow2 {{ base_img }} {{ custom_img }}"
+  args:
+    creates: "{{ custom_img }}"
